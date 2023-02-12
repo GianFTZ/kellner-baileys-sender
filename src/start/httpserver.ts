@@ -1,63 +1,37 @@
-import fastify from 'fastify'
-import { Launcher, wsConnection } from '../connection';
-const DEBUG_NUMBER = '554599847520@s.whatsapp.net'
+import express, { json, Router } from 'express'
+import { Launcher, wsConnection } from '../connection'
+import cors from 'cors'
+const DEBUG_NUMBER = '554584194887@s.whatsapp.net'
 
-interface IQuerystring {
-  name: string,
-  timestamp: any
-}
 
-interface IHeaders {
-  'h-Custom': string;
-}
-
-interface IParams {
-  object: any,
-  jid: string
-}
-
-const server = fastify()
-
-server.get('/ping', () => {
-  return 'oi anaaaaa'
+const app = express()
+const router = Router()
+app.use(json())
+app.use(cors({
+    origin: '*'
+}));
+router.get('/ping', (req, res) => {
+  res.json("its running bitch")
 })
-
-server.post<{
-  Headers: IHeaders,
-  Querystring: IQuerystring
-}>('/teste', async (request, response) => {
-  const { name, timestamp } = request.query
-  wsConnection?.sendMessage('554599847520@s.whatsapp.net', {
-    text: `
-    ${name},
-    sended in: ${(Date.now() / 1000) - (Number(timestamp) / 1000)} segs
-    `
-  })
-  return 'ok'
-})
-
-server.post<{
-  Querystring: IParams
-}>('/send', async (request, res) => {
-  const { jid, object } = request.query
+router.post('/', async (req, res) => {
+	console.log(req.body)
+  const { jid, object } = req.body
   try {
     const parsed = JSON.parse(object)
+	   console.log(parsed)
     const response = await wsConnection?.sendMessage(jid, parsed);
     if(!response) return new Error(`we cannot send the message: ${object} to ${jid}`);
+    res.json("success")
     return response
-  } catch (e) {
+  } catch (e){
+	  res.json("error")
     return await wsConnection?.sendMessage(DEBUG_NUMBER, {
       text: `${e}`
     })
   }
 })
-
-server.listen({ port: 3333 }, (err: any, address: any) => {
-  if (err) {
-    console.error(err)
-    process.exit(1)
-  }
-  console.log(`listening on port ${address}`)
-  new Launcher().buildProps();
+app.use(router)
+app.listen(3333, () => {
+  console.log("app is listening on 3333")
+  new Launcher().buildProps()
 })
-// const response = await wsConnection?.relayMessage(jid, JSON.parse(object), {})
