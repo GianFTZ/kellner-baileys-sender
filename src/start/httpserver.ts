@@ -19,7 +19,10 @@ router.post('/', async (req, res) => {
   try {
     const parsed = JSON.parse(object)
 	   console.log(parsed)
-    const response = await wsConnection?.sendMessage(jid, parsed);
+    const response = await wsConnection?.sendMessage(jid, parsed, {
+    	quoted: undefined,
+        ephemeralExpiration: 604800
+    });
     if(!response) return new Error(`we cannot send the message: ${object} to ${jid}`);
     res.json("success")
     return response
